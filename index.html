@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>🎬 Наш Киносписок</title>
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #f0f0f5;
+            --text-muted: #a0a0b0;
+            --accent: #7c5cff;
+            --accent-glow: rgba(124, 92, 255, 0.4);
+            --danger: #ff5c7c;
+            --success: #3ddc97;
+            --star: #ffc93c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh;
+            background-image: radial-gradient(circle at 20% 10%, rgba(124, 92, 255, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at 80% 90%, rgba(61, 220, 151, 0.1) 0%, transparent 40%);
+            background-attachment: fixed; padding: 1.5rem;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .glass {
+            background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1, h2 { font-weight: 600; letter-spacing: -0.02em; }
+        #welcome-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; }
+        .welcome-box { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 1rem; text-align: center; }
+        .welcome-box input {
+            width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2); color: var(--text); font-size: 1rem; outline: none; text-align: center;
+        }
+        .welcome-box input:focus { border-color: var(--accent); }
+        .btn {
+            padding: 14px 24px; border-radius: 12px; border: none; font-weight: 600; font-size: 1rem; cursor: pointer;
+            transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 20px var(--accent-glow); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px var(--accent-glow); }
+        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+        .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+        header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .avatar {
+            width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent);
+            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;
+            color: white; text-transform: uppercase;
+        }
+        .user-name { font-weight: 600; }
+        .add-form { display: grid; grid-template-columns: 1fr 150px; gap: 10px; margin-bottom: 10px; }
+        .add-form .full-width { grid-column: 1 / -1; }
+        .add-form input, .add-form select {
+            width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2); color: var(--text); font-size: 1rem; outline: none;
+        }
+        .add-form select option { background: var(--bg); }
+        .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .filter-btn {
+            padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: transparent;
+            color: var(--text-muted); cursor: pointer; transition: all 0.2s; font-size: 0.9rem;
+        }
+        .filter-btn.active, .filter-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .filter-btn.watched-filter.active { background: var(--success); border-color: var(--success); }
+        .movie-grid { display: flex; flex-direction: column; gap: 12px; }
+        .movie-card {
+            display: flex; flex-direction: column; gap: 10px; padding: 1rem 1.2rem;
+            border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+            transition: all 0.2s; animation: slideIn 0.3s ease;
+        }
+        .movie-card:hover { border-color: var(--accent); background: rgba(255,255,255,0.07); }
+        .movie-card.watched { opacity: 0.75; }
+        .movie-card.watched .movie-title { text-decoration: line-through; color: var(--text-muted); }
+        .movie-main { display: flex; align-items: center; gap: 12px; }
+        .poster {
+            width: 54px; height: 78px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(124,92,255,0.3), rgba(61,220,151,0.2));
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .check-btn {
+            width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: transparent;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent;
+            font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
+        }
+        .check-btn:hover { border-color: var(--success); }
+        .check-btn.checked { background: var(--success); border-color: var(--success); color: white; }
+        .movie-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .movie-title { font-weight: 600; font-size: 1.05rem; word-break: break-word; }
+        .movie-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .genre-tag {
+            background: rgba(124, 92, 255, 0.2); color: #b8a6ff; padding: 2px 10px; border-radius: 10px;
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .movie-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .icon-btn {
+            background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem;
+            padding: 6px; border-radius: 8px; transition: all 0.2s;
+        }
+        .icon-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+        .icon-btn.edit:hover { color: var(--success); }
+        .icon-btn.delete:hover { color: var(--danger); }
+
+        /* --- Оценки (ползунки) --- */
+        .ratings-block {
+            border-top: 1px solid var(--border); padding-top: 10px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .ratings-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .rating-row-user { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+        .rating-row-user .name { min-width: 70px; font-weight: 600; color: var(--text); }
+        .rating-row-user .name.me { color: var(--accent); }
+        .rating-row-user input[type=range] {
+            flex: 1; accent-color: var(--star); cursor: pointer;
+        }
+        .rating-row-user input[type=range]:disabled { accent-color: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
+        .rating-row-user .val {
+            min-width: 40px; text-align: right; font-weight: 700; color: var(--star);
+        }
+        .rating-row-user .val.empty { color: var(--text-muted); font-weight: 400; }
+
+        /* --- Комментарии --- */
+        .comments-block {
+            border-top: 1px solid var(--border); padding-top: 10px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .comments-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .comments-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+        .comment-item {
+            background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 8px; font-size: 0.85rem;
+            border-left: 2px solid var(--accent);
+        }
+        .comment-author { font-weight: 700; color: var(--accent); margin-right: 6px; }
+        .comment-time { font-size: 0.7rem; color: var(--text-muted); margin-left: 6px; }
+        .comment-form { display: flex; gap: 6px; }
+        .comment-form input {
+            flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2); color: var(--text); font-size: 0.85rem; outline: none;
+        }
+        .comment-form input:focus { border-color: var(--accent); }
+        .comment-form button {
+            padding: 8px 14px; border-radius: 8px; border: none; background: var(--accent); color: white;
+            cursor: pointer; font-weight: 600;
+        }
+        .comment-form button:hover { opacity: 0.9; }
+
+        .edit-inputs { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+        .edit-inputs input, .edit-inputs select {
+            padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(0,0,0,0.3); color: white; font-size: 0.95rem;
+        }
+        .edit-inputs input { flex: 1; min-width: 140px; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden { display: none !important; }
+        @media (max-width: 600px) {
+            .add-form { grid-template-columns: 1fr; }
+            header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="welcome-screen" class="hidden">
+            <div class="glass welcome-box">
+                <h2>🎬 Кто у нас сегодня?</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Введите своё имя — оно будет подписывать ваши идеи, оценки и комментарии</p>
+                <input type="text" id="nameInput" placeholder="Например, Аня или Максим" maxlength="20">
+                <button id="enterBtn" class="btn btn-primary">Войти в список</button>
+                <div id="nameError" style="color: var(--danger); font-size: 0.85rem;"></div>
+            </div>
+        </div>
+
+        <div id="main-screen" class="hidden">
+            <header>
+                <h1>🎬 Наш Киносписок</h1>
+                <div class="user-info">
+                    <div id="userAvatar" class="avatar"></div>
+                    <span id="userName" class="user-name"></span>
+                    <button id="switchUserBtn" class="btn btn-ghost" style="padding: 8px 12px; font-size: 0.85rem;">Сменить имя</button>
+                </div>
+            </header>
+
+            <div class="glass" style="padding: 1rem; margin-bottom: 1.5rem;">
+                <div class="add-form">
+                    <input type="text" id="movieTitle" placeholder="Название фильма..." maxlength="100">
+                    <select id="movieGenre">
+                        <option value="Боевик">Боевик</option>
+                        <option value="Комедия">Комедия</option>
+                        <option value="Драма">Драма</option>
+                        <option value="Фантастика">Фантастика</option>
+                        <option value="Ужасы">Ужасы</option>
+                        <option value="Триллер">Триллер</option>
+                        <option value="Мелодрама">Мелодрама</option>
+                        <option value="Другое">Другое</option>
+                    </select>
+                    <input type="url" id="moviePoster" class="full-width" placeholder="URL постера (необязательно): https://...">
+                    <button id="addMovieBtn" class="btn btn-primary full-width">Добавить</button>
+                </div>
+            </div>
+
+            <div id="filterBar" class="filter-bar">
+                <button class="filter-btn active" data-genre="all">Все</button>
+                <button class="filter-btn" data-genre="Боевик">Боевик</button>
+                <button class="filter-btn" data-genre="Комедия">Комедия</button>
+                <button class="filter-btn" data-genre="Драма">Драма</button>
+                <button class="filter-btn" data-genre="Фантастика">Фантастика</button>
+                <button class="filter-btn" data-genre="Ужасы">Ужасы</button>
+                <button class="filter-btn" data-genre="Триллер">Триллер</button>
+                <button class="filter-btn" data-genre="Мелодрама">Мелодрама</button>
+                <button class="filter-btn" data-genre="Другое">Другое</button>
+                <button class="filter-btn watched-filter" data-genre="watched">✓ Просмотрено</button>
+                <button class="filter-btn watched-filter" data-genre="unwatched">◯ Не просмотрено</button>
+            </div>
+
+            <div id="movieList" class="movie-grid"></div>
+            <div id="emptyState" style="text-align: center; color: var(--text-muted); padding: 3rem;">Список пуст. Добавьте первый фильм!</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { 
+            getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, 
+            query, orderBy, serverTimestamp, updateDoc 
+        } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCxat6pC5zR09Q9AYsN35EZJ7mbgvzBdcY",
+            authDomain: "filmprojectss.firebaseapp.com",
+            projectId: "filmprojectss",
+            storageBucket: "filmprojectss.firebasestorage.app",
+            messagingSenderId: "643342821217",
+            appId: "1:643342821217:web:effa8a255d0a3bf8e28720"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainScreen = document.getElementById('main-screen');
+        const nameInput = document.getElementById('nameInput');
+        const enterBtn = document.getElementById('enterBtn');
+        const nameError = document.getElementById('nameError');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const switchUserBtn = document.getElementById('switchUserBtn');
+        const movieTitle = document.getElementById('movieTitle');
+        const movieGenre = document.getElementById('movieGenre');
+        const moviePoster = document.getElementById('moviePoster');
+        const addMovieBtn = document.getElementById('addMovieBtn');
+        const movieList = document.getElementById('movieList');
+        const emptyState = document.getElementById('emptyState');
+        const filterBar = document.getElementById('filterBar');
+
+        let currentUser = localStorage.getItem('kinolist_user') || '';
+        let currentFilter = 'all';
+        let allMovies = [];
+        let movieUnsubs = {};   // movieId -> unsubscribe
+        let commentUnsubs = {}; // movieId -> unsubscribe
+        let commentsCache = {}; // movieId -> [comments]
+
+        const AVATAR_COLORS = ['#7c5cff', '#3ddc97', '#ff5c7c', '#ffc93c', '#4cc9f0', '#f72585', '#7209b7'];
+        function colorForName(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+        }
+
+        function showMain() {
+            welcomeScreen.classList.add('hidden');
+            mainScreen.classList.remove('hidden');
+            userName.textContent = currentUser;
+            userAvatar.textContent = currentUser.charAt(0);
+            userAvatar.style.background = colorForName(currentUser);
+            listenToMovies();
+        }
+
+        function showWelcome() {
+            welcomeScreen.classList.remove('hidden');
+            mainScreen.classList.add('hidden');
+            cleanupSubscriptions();
+            nameInput.value = currentUser;
+        }
+
+        function cleanupSubscriptions() {
+            Object.values(movieUnsubs).forEach(u => u && u());
+            Object.values(commentUnsubs).forEach(u => u && u());
+            movieUnsubs = {}; commentUnsubs = {}; commentsCache = {};
+        }
+
+        enterBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name.length < 2) { nameError.textContent = 'Имя должно быть хотя бы 2 символа'; return; }
+            nameError.textContent = '';
+            currentUser = name;
+            localStorage.setItem('kinolist_user', name);
+            showMain();
+        });
+        nameInput.addEventListener('keypress', e => { if (e.key === 'Enter') enterBtn.click(); });
+
+        switchUserBtn.addEventListener('click', () => {
+            localStorage.removeItem('kinolist_user');
+            currentUser = '';
+            showWelcome();
+        });
+
+        // --- Подписка на фильмы ---
+        function listenToMovies() {
+            cleanupSubscriptions();
+            const q = query(collection(db, "movies"), orderBy("createdAt", "desc"));
+            const unsub = onSnapshot(q, (snapshot) => {
+                allMovies = [];
+                snapshot.forEach(d => allMovies.push({ id: d.id, ...d.data() }));
+                renderMovies();
+            }, (err) => console.error("Ошибка подписки:", err));
+            movieUnsubs['_all'] = unsub;
+        }
+
+        // --- Подписка на комментарии конкретного фильма ---
+        function subscribeToComments(movieId) {
+            if (commentUnsubs[movieId]) return;
+            const q = query(collection(db, "movies", movieId, "comments"), orderBy("createdAt", "asc"));
+            const unsub = onSnapshot(q, (snapshot) => {
+                const list = [];
+                snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
+                commentsCache[movieId] = list;
+                renderCommentsFor(movieId);
+            }, (err) => console.error("Ошибка комментариев:", err));
+            commentUnsubs[movieId] = unsub;
+        }
+
+        // --- Отрисовка комментариев для конкретного фильма ---
+        function renderCommentsFor(movieId) {
+            const container = document.querySelector(`.comments-list[data-movie-id="${movieId}"]`);
+            if (!container) return;
+            const list = commentsCache[movieId] || [];
+            if (list.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">Комментариев пока нет</div>';
+                return;
+            }
+            container.innerHTML = list.map(c => `
+                <div class="comment-item">
+                    <span class="comment-author">${escapeHtml(c.author)}</span>
+                    <span>${escapeHtml(c.text)}</span>
+                    <span class="comment-time">${formatTime(c.createdAt)}</span>
+                </div>
+            `).join('');
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '';
+            const date = ts.toDate ? ts.toDate() : new Date(ts);
+            return date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // --- Получаем список всех пользователей, которые уже оценивали фильм + себя ---
+        function getKnownUsers(movie) {
+            const users = new Set(Object.keys(movie.ratings || {}));
+            users.add(currentUser);
+            return Array.from(users);
+        }
+
+        function renderMovies() {
+            let filtered = allMovies;
+            if (currentFilter === 'watched') filtered = allMovies.filter(m => m.watched);
+            else if (currentFilter === 'unwatched') filtered = allMovies.filter(m => !m.watched);
+            else if (currentFilter !== 'all') filtered = allMovies.filter(m => m.genre === currentFilter);
+
+            movieList.innerHTML = '';
+            emptyState.classList.toggle('hidden', filtered.length > 0);
+
+            filtered.forEach(movie => {
+                const card = document.createElement('div');
+                card.className = 'movie-card' + (movie.watched ? ' watched' : '');
+                card.dataset.movieId = movie.id;
+
+                const posterHtml = movie.poster
+                    ? `<img class="poster" src="${escapeHtml(movie.poster)}" alt="" onerror="this.outerHTML='<div class=\\'poster\\'>🎬</div>'">`
+                    : `<div class="poster">🎬</div>`;
+
+                // Ползунки: по одному на каждого известного пользователя
+                const users = getKnownUsers(movie);
+                const ratingsHtml = users.map(user => {
+                    const val = (movie.ratings && movie.ratings[user]) || 0;
+                    const isMe = user === currentUser;
+                    return `
+                        <div class="rating-row-user" data-user="${escapeHtml(user)}">
+                            <span class="name ${isMe ? 'me' : ''}">${escapeHtml(user)}${isMe ? ' (вы)' : ''}</span>
+                            <input type="range" min="0" max="10" step="1" value="${val}" 
+                                   class="rating-slider" data-movie-id="${movie.id}" data-user="${escapeHtml(user)}"
+                                   ${isMe ? '' : 'disabled'}>
+                            <span class="val ${val === 0 ? 'empty' : ''}">${val === 0 ? '—' : val}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                card.innerHTML = `
+                    <div class="movie-main">
+                        ${posterHtml}
+                        <button class="check-btn ${movie.watched ? 'checked' : ''}" title="Отметить просмотренным">✓</button>
+                        <div class="movie-info">
+                            <span class="movie-title">${escapeHtml(movie.title)}</span>
+                            <div class="movie-meta">
+                                <span class="genre-tag">${escapeHtml(movie.genre || 'Другое')}</span>
+                                <span>💡 ${escapeHtml(movie.addedBy || 'Аноним')}</span>
+                            </div>
+                        </div>
+                        <div class="movie-actions">
+                            <button class="icon-btn edit" title="Редактировать">✏️</button>
+                            <button class="icon-btn delete" title="Удалить">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="ratings-block">
+                        <div class="ratings-title">Оценки (0–10)</div>
+                        ${ratingsHtml}
+                    </div>
+                    <div class="comments-block">
+                        <div class="comments-title">Комментарии</div>
+                        <div class="comments-list" data-movie-id="${movie.id}">
+                            <div style="color:var(--text-muted);font-size:0.8rem;">Загрузка...</div>
+                        </div>
+                        <div class="comment-form">
+                            <input type="text" class="comment-input" placeholder="Написать комментарий..." maxlength="500" data-movie-id="${movie.id}">
+                            <button class="comment-send" data-movie-id="${movie.id}">Отправить</button>
+                        </div>
+                    </div>
+                `;
+
+                // Чекбокс
+                card.querySelector('.check-btn').onclick = async () => {
+                    await updateDoc(doc(db, "movies", movie.id), { watched: !movie.watched });
+                };
+
+                // Удаление
+                card.querySelector('.delete').onclick = () => deleteMovie(movie.id);
+
+                // Редактирование
+                card.querySelector('.edit').onclick = () => openEditMode(card, movie);
+
+                // Ползунки рейтинга
+                card.querySelectorAll('.rating-slider').forEach(slider => {
+                    slider.addEventListener('input', (e) => {
+                        const valSpan = e.target.parentElement.querySelector('.val');
+                        const v = Number(e.target.value);
+                        valSpan.textContent = v === 0 ? '—' : v;
+                        valSpan.classList.toggle('empty', v === 0);
+                    });
+                    slider.addEventListener('change', async (e) => {
+                        const user = e.target.dataset.user;
+                        if (user !== currentUser) return; // защита: менять можно только свою оценку
+                        const val = Number(e.target.value);
+                        const updated = { ...(movie.ratings || {}) };
+                        if (val === 0) delete updated[user]; else updated[user] = val;
+                        await updateDoc(doc(db, "movies", movie.id), { ratings: updated });
+                    });
+                });
+
+                // Комментарии — подписка
+                subscribeToComments(movie.id);
+
+                // Отправка комментария
+                const sendBtn = card.querySelector('.comment-send');
+                const input = card.querySelector('.comment-input');
+                const send = async () => {
+                    const text = input.value.trim();
+                    if (!text) return;
+                    try {
+                        await addDoc(collection(db, "movies", movie.id, "comments"), {
+                            text,
+                            author: currentUser,
+                            createdAt: serverTimestamp()
+                        });
+                        input.value = '';
+                    } catch (e) { alert('Ошибка: ' + e.message); }
+                };
+                sendBtn.onclick = send;
+                input.addEventListener('keypress', (e) => { if (e.key === 'Enter') send(); });
+
+                movieList.appendChild(card);
+            });
+
+            // Перерисовываем комментарии из кэша для уже подписанных фильмов
+            Object.keys(commentsCache).forEach(renderCommentsFor);
+        }
+
+        function openEditMode(card, movie) {
+            const main = card.querySelector('.movie-main');
+            const originalHtml = main.innerHTML;
+            main.innerHTML = `
+                <div class="edit-inputs">
+                    <input type="text" class="edit-title" value="${escapeHtml(movie.title)}" maxlength="100" placeholder="Название">
+                    <select class="edit-genre">
+                        ${['Боевик','Комедия','Драма','Фантастика','Ужасы','Триллер','Мелодрама','Другое'].map(g => 
+                            `<option value="${g}" ${movie.genre === g ? 'selected' : ''}>${g}</option>`
+                        ).join('')}
+                    </select>
+                    <input type="url" class="edit-poster" value="${escapeHtml(movie.poster || '')}" placeholder="URL постера">
+                    <button class="btn btn-primary" style="padding: 8px 12px;" id="saveEdit">💾</button>
+                    <button class="btn btn-ghost" style="padding: 8px 12px;" id="cancelEdit">✖</button>
+                </div>
+            `;
+            main.querySelector('#saveEdit').onclick = async () => {
+                const newTitle = main.querySelector('.edit-title').value.trim();
+                const newGenre = main.querySelector('.edit-genre').value;
+                const newPoster = main.querySelector('.edit-poster').value.trim();
+                if (!newTitle) return;
+                await updateDoc(doc(db, "movies", movie.id), { 
+                    title: newTitle, 
+                    genre: newGenre,
+                    poster: newPoster 
+                });
+            };
+            main.querySelector('#cancelEdit').onclick = () => { renderMovies(); };
+        }
+
+        async function deleteMovie(id) {
+            if (!confirm('Удалить этот фильм? Комментарии тоже удалятся.')) return;
+            // Удаляем комментарии (по одному — Firestore не удаляет подколлекции автоматически)
+            const comments = commentsCache[id] || [];
+            for (const c of comments) {
+                try { await deleteDoc(doc(db, "movies", id, "comments", c.id)); } catch {}
+            }
+            await deleteDoc(doc(db, "movies", id));
+            if (commentUnsubs[id]) { commentUnsubs[id](); delete commentUnsubs[id]; }
+            delete commentsCache[id];
+        }
+
+        addMovieBtn.addEventListener('click', async () => {
+            const title = movieTitle.value.trim();
+            if (!title) return;
+            try {
+                await addDoc(collection(db, "movies"), {
+                    title,
+                    genre: movieGenre.value,
+                    poster: moviePoster.value.trim(),
+                    addedBy: currentUser,
+                    watched: false,
+                    ratings: {},
+                    createdAt: serverTimestamp()
+                });
+                movieTitle.value = '';
+                moviePoster.value = '';
+                movieTitle.focus();
+            } catch (e) { alert('Ошибка: ' + e.message); }
+        });
+
+        filterBar.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('filter-btn')) return;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentFilter = e.target.dataset.genre;
+            renderMovies();
+        });
+
+        movieTitle.addEventListener('keypress', e => { if (e.key === 'Enter') addMovieBtn.click(); });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        if (currentUser) showMain();
+        else showWelcome();
+    </script>
+</body>
+</html>
